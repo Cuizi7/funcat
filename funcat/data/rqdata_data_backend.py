@@ -24,11 +24,11 @@ class RQDataBackend(DataBackend):
         return t
 
     @lru_cache(4096)
-    def get_price(self, order_book_id, start, end, freq):
+    def get_price(self, order_book_id, start, end, freq, **kwargs):
         start = get_str_date_from_int(start)
         end = get_str_date_from_int(end)
 
-        df = self.rqdatac.get_price(order_book_id, start_date=start, end_date=end, frequency=freq)
+        df = self.rqdatac.get_price(order_book_id, start_date=start, end_date=end, frequency=freq, **kwargs)
         suspended_df = self.rqdatac.is_suspended(order_book_id, start_date=start, end_date=end)
 
         if suspended_df is None:
@@ -62,3 +62,13 @@ class RQDataBackend(DataBackend):
     @lru_cache(4096)
     def symbol(self, order_book_id):
         return "{}[{}]".format(order_book_id, self.rqdatac.instruments(order_book_id).symbol)
+
+    @lru_cache()
+    def get_index_component(self, order_book_id):
+        """
+        获取指数组成成分
+        :param order_book_id: 股票代码
+        :return: list of str
+        """
+        return self.rqdatac.index_components(order_book_id)
+

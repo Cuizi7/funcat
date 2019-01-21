@@ -36,7 +36,7 @@ class RQAlphaDataBackend(DataBackend):
 
         self.data_proxy = DataProxy(BaseDataSource(os.path.expanduser(bundle_path)))
 
-    def get_price(self, order_book_id, start, end, freq):
+    def get_price(self, order_book_id, start, end, freq, **kwargs):
         """
         :param order_book_id: e.g. 000002.XSHE
         :param start: 20160101
@@ -44,6 +44,11 @@ class RQAlphaDataBackend(DataBackend):
         :returns:
         :rtype: numpy.rec.array
         """
+        if 'fields' in kwargs:
+            fields = kwargs['fields']
+        else:
+            fields = None
+
         assert freq == "1d"
 
         start = get_date_from_int(start)
@@ -52,7 +57,7 @@ class RQAlphaDataBackend(DataBackend):
         bar_count = (end - start).days
 
         bars = self.data_proxy.history_bars(
-            order_book_id, bar_count, freq, field=None,
+            order_book_id, bar_count, freq, field=fields,
             dt=datetime.datetime.combine(end, datetime.time(23, 59, 59)))
 
         if bars is None or len(bars) == 0:

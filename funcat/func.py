@@ -104,7 +104,10 @@ class SumSeries(NumericSeries):
             try:
                 series[series == np.inf] = 0
                 series[series == -np.inf] = 0
-                series = talib.SUM(series, period)
+                if period == 0:
+                    series = np.cumsum(series)
+                else:
+                    series = talib.SUM(series, period)
             except Exception as e:
                 raise FormulaException(e)
         super(SumSeries, self).__init__(series)
@@ -122,6 +125,47 @@ class AbsSeries(NumericSeries):
             except Exception as e:
                 raise FormulaException(e)
         super(AbsSeries, self).__init__(series)
+
+
+class AveDevSeries(NumericSeries):
+    def __init__(self, series, period):
+        result_series = MovingAverageSeries(series, period).series  # used to store the result
+        if isinstance(series, NumericSeries):
+            series = series.series
+            try:
+                series[series == np.inf] = 0
+                series[series == -np.inf] = 0
+                temp_len = len(series)
+                for i in np.arange(period - 1, temp_len):
+                    temp_start = i - period + 1
+                    temp_series = series[temp_start:(i + 1)]
+                    temp_avg = np.mean(temp_series)
+                    temp_dev = temp_series - temp_avg
+                    result_series[i] = np.mean(np.abs(temp_dev))
+            except Exception as e:
+                raise FormulaException(e)
+        super(AveDevSeries, self).__init__(result_series)
+        self.extra_create_kwargs["period"] = period
+
+
+class DmaSeries(NumericSeries):
+    def __init__(self, series, weights):
+        if isinstance(series, NumericSeries):
+            series = series.series
+            try:
+                series_mean = np.nanmean(series)
+                series[series == np.inf] = series_mean
+                series[series == -np.inf] = series_mean
+                series[np.isnan(series)] = series_mean
+                weights_mean = np.nanmean(weights._series)
+                weights._series[np.isnan(weights._series)] = weights_mean
+            except Exception as e:
+                raise FormulaException(e)
+        result_series = series  # used to store the result
+        for i in range(1, len(series)):
+            result_series[i] = (1 - weights._series[i]) * result_series[i - 1] + weights._series[i] * result_series[i]
+
+        super(DmaSeries, self).__init__(result_series)
 
 
 @handle_numpy_warning
