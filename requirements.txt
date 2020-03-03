@@ -1,7 +1,7 @@
 numpy
 six
 backports.functools_lru_cache
-pandas
+pandas<=0.25.3
 lxml
 requests
 TA-Lib
